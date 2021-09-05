@@ -1,50 +1,55 @@
-import React, { Component } from "react"
-import logo from "./logo.svg"
-import "./App.css"
+import React, { useState, useEffect, useContext } from 'react';
+import { ThemeContext } from './components/ThemeProvider/ThemeProvider';
+import './App.css';
+import Container from './components/Container/Container';
+import Header from './components/Header/Header';
+import Search from './components/Search/Search';
+import User from './components/User/User';
 
-class LambdaDemo extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { loading: false, msg: null }
-  }
 
-  handleClick = api => e => {
-    e.preventDefault()
 
-    this.setState({ loading: true })
-    fetch("/.netlify/functions/" + api)
-      .then(response => response.json())
-      .then(json => this.setState({ loading: false, msg: json.msg }))
-  }
+function App() {
+  const theme = useContext(ThemeContext);
+  const darkMode = theme.state.darkMode;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [user, setUser] = useState('');
+  const [isEmptySearch, setIsEmptySearch] = useState(false);
 
-  render() {
-    const { loading, msg } = this.state
+  const handleSearch = () => {
+    const searchField = document.getElementById('search');
+    setSearchTerm(searchField.value);
+  };
 
-    return (
-      <p>
-        <button onClick={this.handleClick("hello")}>{loading ? "Loading..." : "Call Lambda"}</button>
-        <button onClick={this.handleClick("async-dadjoke")}>{loading ? "Loading..." : "Call Async Lambda"}</button>
-        <br />
-        <span>{msg}</span>
-      </p>
-    )
-  }
+  
+
+  useEffect(() => {
+    fetch(`https://api.github.com/users/${searchTerm}`)
+      .then(res => res.json())
+      .then(
+        (result) => {
+          if (result.name) {
+            setUser(result);
+            setIsEmptySearch(false);
+          } else {
+            setIsEmptySearch(true);
+          }
+        })
+      .catch(error => {
+        throw(error)
+      })
+  }, [searchTerm])
+
+  
+  
+  return (
+    <div className={`App font-mono px-12 py-24 h-screen ${darkMode ? "bg-lightBlack" : "bg-lightGray"}`}>
+      <Container>
+        <Header />
+        <Search searchTerm={searchTerm} handleSearch={handleSearch} isEmptySearch={isEmptySearch} />
+        { isEmptySearch || searchTerm === '' ? '' : <User user={user} /> }
+      </Container>
+    </div>
+  );
 }
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <LambdaDemo />
-        </header>
-      </div>
-    )
-  }
-}
-
-export default App
+export default App;
